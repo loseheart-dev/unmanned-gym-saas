@@ -13,7 +13,7 @@ import org.springframework.stereotype.Component;
 public class JsonSnapshots {
     private static final Set<String> SECRETS = Set.of("password", "passwordhash", "oldpassword", "newpassword",
             "accesstoken", "refreshtoken", "token", "authorization", "secret", "secretciphertext", "appsecret",
-            "sessionkey", "openid", "unionid", "code", "phone", "phoneciphertext", "objectkey", "playbackurl");
+            "sessionkey", "openid", "unionid", "code", "phonecode", "phone", "phoneciphertext", "objectkey", "playbackurl");
     private final ObjectMapper mapper;
     public JsonSnapshots(ObjectMapper mapper) { this.mapper = mapper; }
 

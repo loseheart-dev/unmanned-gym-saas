@@ -169,6 +169,62 @@ class FoundationIntegrationTest {
     }
 
     @Test
+    void customerProfileWritesReplayWithoutReusingThePhoneCode() throws Exception {
+        String token = customerLogin("CUSTOMER_A");
+        String otherToken = customerLogin("CUSTOMER_B");
+        String path = "/app/me/phone-binding";
+        String name = "Nickname " + prefix;
+        var rename = patch("/app/me").header("Authorization", bearer(token)).header("Idempotency-Key", prefix + "-rename")
+                .contentType("application/json").content(json.writeValueAsString(Map.of("nickname", name)));
+        mvc.perform(rename).andExpect(status().isOk()).andExpect(jsonPath("$.data.nickname").value(name));
+        mvc.perform(rename).andExpect(status().isOk()).andExpect(jsonPath("$.data.nickname").value(name));
+        mvc.perform(patch("/app/me").header("Authorization", bearer(token)).header("Idempotency-Key", prefix + "-rename")
+                .contentType("application/json").content("{\"nickname\":\"different\"}"))
+                .andExpect(status().isConflict()).andExpect(jsonPath("$.code").value("IDEMPOTENCY_CONFLICT"));
+        String body = json.writeValueAsString(Map.of("phoneCode", "mock-" + prefix));
+        var binding = post(path).header("Authorization", bearer(token)).header("Idempotency-Key", prefix + "-bind")
+                .contentType("application/json").content(body);
+        var result = mvc.perform(binding).andExpect(status().isOk()).andExpect(jsonPath("$.data.phoneVerified").value(true))
+                .andExpect(jsonPath("$.data.phoneMasked").isString()).andExpect(jsonPath("$.data.phoneCiphertext").doesNotHaveJsonPath())
+                .andReturn();
+        var profile = json.readTree(result.getResponse().getContentAsString()).path("data");
+        assertTrue(profile.path("phoneMasked").asText().matches("138\\*{4}\\d{4}"));
+        long id = profile.path("id").asLong();
+        assertTrue(jdbc.queryForObject("SELECT phone_ciphertext FROM customer_user WHERE id=?", String.class, id).startsWith("v1:"));
+        mvc.perform(binding).andExpect(status().isOk()).andExpect(jsonPath("$.data.phoneMasked").value(profile.path("phoneMasked").asText()));
+        mvc.perform(post(path).header("Authorization", bearer(otherToken)).header("Idempotency-Key", prefix + "-reuse")
+                .contentType("application/json").content(body)).andExpect(status().isConflict());
+        mvc.perform(delete(path).header("Authorization", bearer(token)).header("Idempotency-Key", prefix + "-unbind"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.data.phoneVerified").value(false));
+        assertNull(jdbc.queryForObject("SELECT phone_ciphertext FROM customer_user WHERE id=?", String.class, id));
+        assertNull(jdbc.queryForObject("SELECT phone_verified_at FROM customer_user WHERE id=?", String.class, id));
+    }
+
+    @Test
+    void changingAnAdminPasswordRevokesOldTokensAndSavesOnlyBcrypt() throws Exception {
+        String replacement = "new-foundation-test-password";
+        String url = "/admin/me/password";
+        mvc.perform(post(url).header("Authorization", bearer(tokenA)).contentType("application/json")
+                .content(json.writeValueAsString(Map.of("oldPassword", PASSWORD, "newPassword", PASSWORD))))
+                .andExpect(status().isBadRequest());
+        mvc.perform(post(url).header("Authorization", bearer(tokenA)).contentType("application/json")
+                .content(json.writeValueAsString(Map.of("oldPassword", PASSWORD, "newPassword", replacement))))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.data.accepted").value(true));
+        mvc.perform(get("/admin/me").header("Authorization", bearer(tokenA))).andExpect(status().isUnauthorized());
+        String hash = jdbc.queryForObject("SELECT password_hash FROM admin_user WHERE id=?", String.class, adminA);
+        assertTrue(passwords.matches(replacement, hash));
+        assertFalse(passwords.matches(PASSWORD, hash));
+    }
+
+    @Test
+    void adminLoginLimitCountsFailuresAndBlocksAtFive() throws Exception {
+        var invalid = post("/admin/auth/login").with(r -> { r.setRemoteAddr(prefix); return r; }).contentType("application/json")
+                .content(json.writeValueAsString(Map.of("username", prefix + "A", "password", "wrong-password")));
+        for (int i = 0; i < 5; i++) mvc.perform(invalid).andExpect(status().isUnauthorized());
+        mvc.perform(invalid).andExpect(status().isTooManyRequests());
+    }
+
+    @Test
     void databasePermissionsCannotEscalateOperatorsAndAuthoritiesAreReloaded() throws Exception {
         String token = login("operator");
         mvc.perform(get("/admin/me").header("Authorization", bearer(token)))

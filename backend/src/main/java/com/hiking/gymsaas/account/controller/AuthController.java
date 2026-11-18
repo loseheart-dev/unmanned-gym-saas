@@ -31,6 +31,29 @@ public class AuthController {
     @GetMapping("/app/me")
     public ApiResponse<AuthViews.CustomerProfile> customerMe() { return ApiResponse.ok(auth.customerMe()); }
 
+    @PatchMapping("/app/me")
+    public ApiResponse<AuthViews.CustomerProfile> rename(@RequestHeader("Idempotency-Key") String key,
+                                                          @Valid @RequestBody AuthRequests.Nickname input) {
+        return ApiResponse.ok(auth.renameCustomer(key, input));
+    }
+
+    @PostMapping("/app/me/phone-binding")
+    public ApiResponse<AuthViews.CustomerProfile> bindPhone(@RequestHeader("Idempotency-Key") String key,
+                                                             @Valid @RequestBody AuthRequests.PhoneBinding input) {
+        return ApiResponse.ok(auth.bindPhone(key, input));
+    }
+
+    @DeleteMapping("/app/me/phone-binding")
+    public ApiResponse<AuthViews.CustomerProfile> unbindPhone(@RequestHeader("Idempotency-Key") String key) {
+        return ApiResponse.ok(auth.unbindPhone(key));
+    }
+
+    @PostMapping("/admin/me/password")
+    public ApiResponse<AuthViews.Accepted> changePassword(@Valid @RequestBody AuthRequests.ChangePassword input) {
+        auth.changePassword(input);
+        return ApiResponse.ok(new AuthViews.Accepted(true));
+    }
+
     @PostMapping({"/admin/auth/logout", "/app/auth/logout"})
     public ApiResponse<AuthViews.Accepted> logout() {
         auth.logout();

@@ -13,6 +13,7 @@ public enum ErrorCode {
     ETAG_MISMATCH(HttpStatus.PRECONDITION_FAILED, "配置已变化，请刷新后重试"),
     PRECONDITION_REQUIRED(HttpStatus.PRECONDITION_REQUIRED, "缺少并发更新前置条件"),
     RATE_LIMITED(HttpStatus.TOO_MANY_REQUESTS, "请求过于频繁"),
+    PHONE_BINDING_UNAVAILABLE(HttpStatus.UNPROCESSABLE_ENTITY, "手机号绑定能力未开通"),
     DEPENDENCY_UNAVAILABLE(HttpStatus.SERVICE_UNAVAILABLE, "依赖服务暂不可用"),
     INTERNAL_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "服务暂不可用");
 

@@ -9,5 +9,9 @@ public interface AuthService {
     AuthViews.CustomerToken devLogin(AuthRequests.DevLogin request, String key, String clientAddress);
     AuthViews.Admin adminMe();
     AuthViews.CustomerProfile customerMe();
+    AuthViews.CustomerProfile renameCustomer(String key, AuthRequests.Nickname request);
+    AuthViews.CustomerProfile bindPhone(String key, AuthRequests.PhoneBinding request);
+    AuthViews.CustomerProfile unbindPhone(String key);
+    void changePassword(AuthRequests.ChangePassword request);
     void logout();
 }

@@ -17,6 +17,16 @@ public final class AuthRequests {
         @Override public String toString() { return "WechatLogin[credentials=REDACTED]"; }
     }
 
+    public record Nickname(@NotBlank @Size(max = 64) String nickname) { }
+    public record PhoneBinding(@NotBlank @Size(max = 512) @JsonProperty(access = JsonProperty.Access.WRITE_ONLY) String phoneCode) {
+        @Override public String toString() { return "PhoneBinding[credentials=REDACTED]"; }
+    }
+    public record ChangePassword(
+            @NotBlank @Size(max = 128) @JsonProperty(access = JsonProperty.Access.WRITE_ONLY) String oldPassword,
+            @NotBlank @Size(min = 12, max = 128) @JsonProperty(access = JsonProperty.Access.WRITE_ONLY) String newPassword) {
+        @Override public String toString() { return "ChangePassword[credentials=REDACTED]"; }
+    }
+
     public enum Fixture { CUSTOMER_A, CUSTOMER_B }
     public record DevLogin(@NotNull Fixture fixtureKey) { }
     public record MerchantName(@NotBlank @Size(max = 100) String name, @NotBlank @Size(max = 500) String reason) { }

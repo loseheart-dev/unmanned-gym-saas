@@ -22,5 +22,6 @@ final class FoundationTestProperties {
                 "foundation-integration-key-32-bytes".getBytes(StandardCharsets.UTF_8)));
         registry.add("app.security.dev.enabled", () -> "true");
         registry.add("app.security.dev.key", () -> DEV_KEY);
+        registry.add("app.wechat.phone-cipher-key", () -> Base64.getEncoder().encodeToString(new byte[32]));
     }
 }

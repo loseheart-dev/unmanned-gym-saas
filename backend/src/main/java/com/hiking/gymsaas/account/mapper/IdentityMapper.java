@@ -29,6 +29,9 @@ public interface IdentityMapper {
     @Select("SELECT " + CUSTOMER_COLUMNS + " FROM customer_user WHERE id = #{id}")
     CustomerUser customer(long id);
 
+    @Select("SELECT " + CUSTOMER_COLUMNS + ", wx_app_id, phone_ciphertext FROM customer_user WHERE id = #{id}")
+    CustomerUser customerProfile(long id);
+
     @Select("SELECT " + CUSTOMER_COLUMNS + " FROM customer_user WHERE id = #{id} FOR UPDATE")
     CustomerUser lockCustomer(long id);
 
@@ -49,4 +52,19 @@ public interface IdentityMapper {
 
     @Update("UPDATE customer_user SET token_version = token_version + 1 WHERE id = #{id} AND token_version = #{version} AND status = 'ACTIVE'")
     int logoutCustomer(@Param("id") long id, @Param("version") long version);
+
+    @Update("UPDATE customer_user SET nickname = #{nickname} WHERE id = #{id}")
+    void renameCustomer(@Param("id") long id, @Param("nickname") String nickname);
+
+    @Update("UPDATE customer_user SET phone_ciphertext = #{ciphertext,jdbcType=VARCHAR}, "
+            + "phone_verified_at = IF(#{ciphertext,jdbcType=VARCHAR} IS NULL, NULL, UTC_TIMESTAMP(3)) WHERE id = #{id}")
+    void setCustomerPhone(@Param("id") long id, @Param("ciphertext") String ciphertext);
+
+    @Update("UPDATE admin_user SET password_hash = #{hash}, token_version = token_version + 1 WHERE id = #{id}")
+    void changePassword(@Param("id") long id, @Param("hash") String hash);
+
+    // The reserved DEV principal scopes local one-time codes across all fixture accounts.
+    @Insert("INSERT INTO api_request(principal_type,principal_id,operation,idempotency_key,request_hash,http_status) "
+            + "VALUES('DEV',0,'localPhoneCode',#{digest},#{digest},200)")
+    void consumeLocalPhoneCode(@Param("digest") String digest);
 }
