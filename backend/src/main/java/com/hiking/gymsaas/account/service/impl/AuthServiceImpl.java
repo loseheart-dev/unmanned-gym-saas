@@ -6,6 +6,7 @@ import com.hiking.gymsaas.account.model.entity.CustomerUser;
 import com.hiking.gymsaas.account.model.vo.AuthViews;
 import com.hiking.gymsaas.account.service.AuthService;
 import com.hiking.gymsaas.account.service.IdentityService;
+import com.hiking.gymsaas.account.service.PasswordRules;
 import com.hiking.gymsaas.account.service.PhoneCipher;
 import com.hiking.gymsaas.account.service.WechatLoginClient;
 import com.hiking.gymsaas.common.exception.BusinessException;
@@ -197,9 +198,9 @@ public class AuthServiceImpl implements AuthService {
                 || !passwords.matches(request.oldPassword(), hash) || admin == null) {
             throw new BusinessException(ErrorCode.UNAUTHENTICATED);
         }
-        if (request.newPassword().getBytes(StandardCharsets.UTF_8).length > 72
-                || request.newPassword().equalsIgnoreCase(admin.getUsername())
-                || request.newPassword().equals(request.oldPassword())) {
+        // 与员工创建/重置共用同一密码口径（12–128 字符、UTF-8 ≤72 字节、不得等于登录名）
+        PasswordRules.validate(request.newPassword(), admin.getUsername());
+        if (request.newPassword().equals(request.oldPassword())) {
             throw new BusinessException(ErrorCode.VALIDATION_ERROR);
         }
         String replacement = passwords.encode(request.newPassword());
