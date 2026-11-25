@@ -31,6 +31,7 @@ public class ApplicationSecurityConfiguration {
                         .requestMatchers("/actuator/health").permitAll()
                         .requestMatchers(HttpMethod.POST, "/admin/auth/login", "/app/auth/wechat-login", "/dev/auth/customer-login").permitAll()
                         .requestMatchers("/dev/**").denyAll()
+                        .requestMatchers(HttpMethod.GET, "/app/stores", "/app/stores/**").permitAll()
                         .requestMatchers("/admin/**").hasAuthority("ADMIN_IDENTITY")
                         .requestMatchers("/app/**").hasAuthority("CUSTOMER")
                         .anyRequest().denyAll())
