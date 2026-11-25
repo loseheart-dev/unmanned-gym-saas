@@ -41,6 +41,12 @@ spring:
     parser:
       strict-duplicate-detection: true
 
+  servlet:
+    multipart:
+      # 4.8 只接受 ≤5MiB 展示图；容器多留 1MiB 供请求头/表单，超限由异常处理器映射 413。
+      max-file-size: 6MB
+      max-request-size: 7MB
+
 app:
   security:
     jwt-secret: ${JWT_SECRET:}

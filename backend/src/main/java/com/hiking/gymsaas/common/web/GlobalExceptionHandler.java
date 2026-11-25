@@ -59,6 +59,11 @@ public class GlobalExceptionHandler {
         return error(ErrorCode.METHOD_NOT_ALLOWED);
     }
 
+    @ExceptionHandler(org.springframework.web.multipart.MaxUploadSizeExceededException.class)
+    ResponseEntity<ApiError> tooLarge(org.springframework.web.multipart.MaxUploadSizeExceededException ex) {
+        return error(ErrorCode.FILE_TOO_LARGE);
+    }
+
     @ExceptionHandler(Exception.class)
     ResponseEntity<ApiError> unexpected(Exception ex) {
         // Exception messages may contain SQL parameters or credentials; never echo or log them here.
